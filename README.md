@@ -1,6 +1,6 @@
 # MyDocs
 
-MyDocs is a collaborative document editing platform built with **Next.js** and **Firebase**. Inspired by Google Docs, MyDocs offers a clean, user-friendly interface with real-time collaboration features, allowing users to edit documents, manage friends, and customize their profiles.
+MyDocs is a collaborative document editing platform built with **Next.js 14** and **Firebase**. Inspired by Google Docs, MyDocs offers a clean, user-friendly interface with real-time collaboration features, allowing users to edit documents, manage friends, and customize their profiles.
 
 ## Features
 
