@@ -1,0 +1,60 @@
+// firestore.rules
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // **Documents Collection**
+    match /documents/{documentId} {
+      // Allow authenticated users to read documents
+      allow read: if request.auth != null;
+
+      // Allow users to write to documents they own or have edit permissions for
+      allow write: if request.auth != null && (
+        resource.data.ownerId == request.auth.uid ||
+        resource.data.editors[request.auth.uid] == true
+      );
+
+      // **Presence Subcollection**
+      match /presence/{userId} {
+        // Allow all authenticated users to read presence data
+        allow read: if request.auth != null;
+
+        // Allow users to write to their own presence document
+        allow write: if request.auth != null && request.auth.uid == userId;
+      }
+
+      // **Comments Subcollection**
+      match /comments/{commentId} {
+        // Allow authenticated users to read comments
+        allow read: if request.auth != null;
+
+        // Allow authenticated users to create comments
+        allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
+
+        // Allow users to update or delete their own comments
+        allow update, delete: if request.auth != null && resource.data.userId == request.auth.uid;
+      }
+    }
+
+    // **Users Collection**
+    match /users/{userId} {
+      // Allow users to read and write their own user document
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // **Friend Requests Collection**
+    match /friendRequests/{requestId} {
+      // Allow authenticated users to create friend requests
+      allow create: if request.auth != null && request.resource.data.senderId == request.auth.uid;
+
+      // Allow users to read friend requests where they are the sender or receiver
+      allow read: if request.auth != null && (
+        resource.data.senderId == request.auth.uid ||
+        resource.data.receiverId == request.auth.uid
+      );
+
+      // Allow users to update or delete friend requests they have sent
+      allow update, delete: if request.auth != null && resource.data.senderId == request.auth.uid;
+    }
+  }
+}

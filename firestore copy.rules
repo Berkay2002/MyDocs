@@ -1,0 +1,19 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Role-Based Access for documents with specific roles
+    match /documents/{docId} {
+      // Allow the owner full access
+      allow read, write: if request.auth.uid == resource.data.ownerId;
+
+      // Allow editors to read and write
+      allow write: if resource.data.editors[request.auth.uid] == true;
+
+      // Allow viewers to read only
+      allow read: if request.auth.uid == resource.data.ownerId ||
+                  resource.data.editors[request.auth.uid] == true ||
+                  resource.data.viewers[request.auth.uid] == true;
+    }
+  }
+}
