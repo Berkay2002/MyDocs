@@ -130,7 +130,7 @@ const CommentSection = ({ documentId, onClose }) => {
                   <div>
                     <span className="font-semibold">{comment.username}</span>{' '}
                     <span className="text-xs text-gray-500">
-                      {moment(comment.timestamp.toDate()).format('LLL')}
+                      {moment(comment.timestamp?.toDate()).format('LLL') || 'No date available'}
                     </span>
                     <p className="mt-1">{comment.content}</p>
                   </div>
