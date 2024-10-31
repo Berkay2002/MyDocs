@@ -52,7 +52,7 @@ const Signup = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center overflow-hidden">
-      <div className="bg-white w-full max-w-sm p-8 rounded-lg shadow-lg">
+      <div className="bg-gray-50 w-full max-w-sm p-8 rounded-lg shadow-lg">
         <Image
           src="/MainLogo.svg"
           alt="Main Logo"

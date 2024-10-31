@@ -53,8 +53,16 @@ body.logged-in {
 		}
 		
 		.option:hover {
-				background-color: #f7fafc; /* Equivalent to bg-gray-100 */
+				background-color: #d3dadf; /* Equivalent to bg-gray-100 */
 	}
+
+  .signup-container {
+    @apply bg-gray-50; /* Updated to a very white gray */
+  }
+
+  .login-container {
+    @apply bg-gray-50; /* Updated to a very white gray */
+  }
 }
 
 /* print stuff */
