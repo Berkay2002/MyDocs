@@ -10,7 +10,8 @@ export const metadata = {
   title: "MyDocs",
   description: "A simple document editor",
   icons: {
-    icon: "/logo-2-docs.ico",
+    icon: "/MainLogo.svg",
+    // You can add different sizes or types if needed
   },
 };
 
