@@ -92,3 +92,5 @@ body.logged-in {
 		display: none !important;
 	}
 }
+
+/* Ensure that the purge paths are correctly set in tailwind.config.js */
