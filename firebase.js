@@ -1,7 +1,7 @@
 // src/firebase.js
 import { initializeApp } from "firebase/app";
 import { 
-  getFirestore, doc, setDoc, getDoc, collection, query, where, getDocs, updateDoc, deleteDoc, arrayUnion, serverTimestamp, orderBy, onSnapshot
+  getFirestore, doc, setDoc, getDoc, addDoc, collection, query, where, getDocs, updateDoc, deleteDoc, arrayUnion, serverTimestamp, orderBy, onSnapshot
 } from "firebase/firestore";
 import { getAuth, GoogleAuthProvider, signInWithPopup } from "firebase/auth";
 import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -103,5 +103,5 @@ const rejectFriendRequest = async (requestId) => {
 export { 
   auth, firestore, storage, signInWithGoogle, findUserByIdentifier, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, uploadProfilePicture,
   getDoc, setDoc, doc, collection, query, where, getDocs, updateDoc, arrayUnion, deleteDoc, ref, uploadBytes, getDownloadURL, getUsernameById, 
-  serverTimestamp, orderBy, onSnapshot
+  serverTimestamp, orderBy, onSnapshot, addDoc
 };

@@ -1,4 +1,5 @@
 // src/components/Navbar/ProfileIcon.js
+
 "use client";
 
 import { useState } from "react";
@@ -13,17 +14,20 @@ const ProfileIcon = () => {
 
   if (!user) return null;
 
-  const username = user.displayName.split("#")[0];
+  const username = user.displayName ? user.displayName.split("#")[0] : "User";
 
   const handleLogout = async () => {
     await logout();
-    router.replace("/"); // Clear the state and redirect to the homepage
+    router.replace("/"); // Redirect to the homepage
   };
 
+  // Determine the profile image source
+  const profileImageSrc = user.photoURL || profilePicture || "/default-profile.jpg";
+
   return (
-    <div className="relative">
+    <div className="relative ml-4">
       <Image
-        src={profilePicture || "/default-profile.jpg"}
+        src={profileImageSrc}
         alt="Profile"
         width={40}
         height={40}
@@ -31,11 +35,11 @@ const ProfileIcon = () => {
         onClick={() => setShowDropdown(!showDropdown)}
       />
       {showDropdown && (
-        <div className="absolute right-0 mt-2 w-48 bg-white shadow-md rounded-md z-10">
+        <div className="absolute right-0 mt-2 w-48 bg-white shadow-md rounded-md z-50">
           <div className="p-3 text-center border-b">
             <p className="text-gray-700">{user.email}</p>
             <Image
-              src={profilePicture || "/default-profile.jpg"}
+              src={profileImageSrc}
               alt="Profile Picture"
               width={60}
               height={60}

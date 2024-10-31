@@ -1,30 +1,26 @@
 module.exports = {
 	mode: "jit",
-	purge: [
-    "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
+	content: [
+	  "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
+	  "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+	  "./src/app/**/*.{js,ts,jsx,tsx,mdx}",
 	],
-	darkMode: false, // or 'media' or 'class'
 	theme: {
-		extend: {
-			screens: {
-				print: { raw: "print" },
-				// => @media print { ... }
-			},
-			animation: {
-				progress: "progress 1s ease-out infinite",
-			},
-			keyframes: {
-				progress: {
-					"0%": { width: "0" },
-					"100%": { width: "100%" },
-				},
-			},
+	  extend: {
+		screens: {
+		  print: { raw: "print" },
 		},
+		animation: {
+		  progress: "progress 1s ease-out infinite",
+		},
+		keyframes: {
+		  progress: {
+			"0%": { width: "0" },
+			"100%": { width: "100%" },
+		  },
+		},
+	  },
 	},
-	variants: {
-		extend: {},
-	},
+	darkMode: "media",
 	plugins: [],
-};
+  };

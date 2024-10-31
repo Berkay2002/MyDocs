@@ -30,7 +30,7 @@ import { useAuth } from "../../../AuthContext";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 
 
-const CommentSection = ({ documentId }) => {
+const CommentSection = ({ documentId, onClose }) => {
   const { user } = useAuth();
   const [comments, setComments] = useState([]);
   const [newComment, setNewComment] = useState("");
@@ -109,7 +109,7 @@ const CommentSection = ({ documentId }) => {
   
 
   return (
-    <div className="p-4">
+    <div className="p-4 rounded-lg" style={{ backgroundColor: '#f0f4f9' }}>
       <h5>Comments</h5>
       <form onSubmit={handleAddComment} className="flex flex-col mb-4">
         <TextField

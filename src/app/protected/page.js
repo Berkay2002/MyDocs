@@ -26,8 +26,6 @@ const ProtectedPage = () => {
           if (userDoc.exists()) {
             const { username, userId } = userDoc.data();
             setDisplayName(`${username}#${userId}`);
-          } else {
-            setDisplayName(user.displayName || user.email.split("@")[0]);
           }
         } catch (error) {
           console.error("Error fetching user data:", error);

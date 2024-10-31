@@ -80,7 +80,7 @@ const TemplateGallery = () => {
                   sx={{
                     width: "100%",
                     padding: 1,
-                    textAlign: "center",
+                    textAlign: "center", 
                     "&:hover": {
                       boxShadow: 6,
                     },

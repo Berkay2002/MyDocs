@@ -1,4 +1,5 @@
 // src/app/profile/page.js
+
 "use client";
 
 import ProfilePictureUpload from "@/components/UserProfile/ProfilePictureUpload";
