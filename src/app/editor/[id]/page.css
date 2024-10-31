@@ -1,0 +1,24 @@
+
+.page {
+  /* A4 dimensions in mm */
+  width: 210mm;
+  height: 297mm;
+  padding: 20px;
+  margin: 20px auto; /* Center the page */
+  border: 1px solid #ddd;
+  background-color: #fff;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  
+  /* Additional styling to emulate physical pages */
+  box-sizing: border-box;
+  
+  /* Prevent content from overflowing */
+  overflow: hidden;
+  
+  /* Ensure pages are stacked vertically */
+  display: flex;
+  flex-direction: column;
+  
+  /* Optional: Add a slight rotation for a realistic look */
+  /* transform: rotate(-1deg); */
+}

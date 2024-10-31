@@ -29,6 +29,9 @@ import useDocumentPresence from "../../hooks/useDocumentPresence";
 import SignOut from "../../components/Signout";
 import ProfileIcon from "../Navbar/ProfileIcon";
 
+// For the file logic
+import FileMenu from './FileMenu';
+
 import "react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
 import { Button, IconButton, Icon } from "@mui/material";
 import DescriptionIcon from "@mui/icons-material/Description";
@@ -38,6 +41,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import CommentIcon from "@mui/icons-material/Comment"; // Import Comment Icon
 import CloseIcon from '@mui/icons-material/Close'; // Add this import
+import TextField from "@mui/material/TextField";
 
 const EditorComponent = dynamic(
   () => import("react-draft-wysiwyg").then((mod) => mod.Editor),
@@ -55,6 +59,8 @@ const Editor = ({ documentId }) => {
   const [profileImage, setProfileImage] = useState("/default-profile.jpg");
   const [isShareOpen, setIsShareOpen] = useState(false); // Add state for modal
   const [isCommentsOpen, setIsCommentsOpen] = useState(false); // Add state for comments
+  const [isEditingTitle, setIsEditingTitle] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
 
   const handleCommentsToggle = () => {
     setIsCommentsOpen((prev) => !prev);
@@ -80,6 +86,7 @@ const Editor = ({ documentId }) => {
         if (docSnap.exists()) {
           const data = docSnap.data();
           setDocumentData(data);
+          setNewTitle(data.title);
 
           if (data.content) {
             const contentState = convertFromRaw(data.content);
@@ -108,6 +115,7 @@ const Editor = ({ documentId }) => {
         if (docSnapshot.exists()) {
           const data = docSnapshot.data();
           setDocumentData(data);
+          setNewTitle(data.title);
 
           if (data.content) {
             const contentState = convertFromRaw(data.content);
@@ -163,6 +171,25 @@ const Editor = ({ documentId }) => {
     setIsShareOpen(false);
   };
 
+  const handleTitleEdit = () => {
+    setIsEditingTitle(true);
+  };
+
+  const handleTitleChange = (e) => {
+    setNewTitle(e.target.value);
+  };
+
+  const handleTitleSave = async () => {
+    if (newTitle.trim() === "") return;
+    try {
+      const docRef = doc(firestore, "documents", documentId);
+      await updateDoc(docRef, { title: newTitle });
+      setIsEditingTitle(false);
+    } catch (error) {
+      console.error("Error updating title:", error.message);
+    }
+  };
+
   if (!documentData) {
     return <p>Loading document...</p>;
   }
@@ -186,7 +213,20 @@ const Editor = ({ documentId }) => {
         </Link>
         <div className="flex-grow px-2">
           <div className="flex space-x-5">
-            <h2 className="text-lg font-bold">{documentData.title}</h2>
+            {isEditingTitle ? (
+              <TextField
+                value={newTitle}
+                onChange={handleTitleChange}
+                onBlur={handleTitleSave}
+                autoFocus
+                variant="outlined"
+                size="small"
+              />
+            ) : (
+              <h2 className="text-lg font-bold" onClick={handleTitleEdit}>
+                {documentData.title}
+              </h2>
+            )}
             <div className="text-gray-500 flex items-center">
               {isSaved !== "Saving..." ? (
                 <Image src="/saved.svg" alt="Save Icon" width={20} height={20} className="h-5 w-5" />
@@ -197,7 +237,7 @@ const Editor = ({ documentId }) => {
             </div>
           </div>
           <div className="hidden md:flex items-center space-x-1 text-gray-600 text-sm -ml-1 h-8">
-            <p className="option">File</p>
+            <FileMenu documentId={documentId} onShareOpen={handleShareOpen} documentData={documentData} /> {/* Pass props */}
             <p className="option">Edit</p>
             <p className="option">Insert</p>
             <p className="option">View</p>
