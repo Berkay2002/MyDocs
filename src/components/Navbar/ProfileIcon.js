@@ -25,12 +25,12 @@ const ProfileIcon = () => {
   const profileImageSrc = user.photoURL || profilePicture || "/default-profile.jpg";
 
   return (
-    <div className="relative ml-4">
+    <div className="relative">
       <Image
         src={profileImageSrc}
         alt="Profile"
-        width={40}
-        height={40}
+        width={50}
+        height={50}
         className="rounded-full cursor-pointer"
         onClick={() => setShowDropdown(!showDropdown)}
       />

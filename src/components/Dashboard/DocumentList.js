@@ -3,7 +3,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { collection, query, where, orderBy, onSnapshot, firestore } from "../../../firebase";
+import { collection, query, where, orderBy, onSnapshot, firestore, doc, updateDoc, deleteDoc, serverTimestamp } from "../../../firebase";
 import { useRouter } from "next/navigation";
 import {
   Card,
@@ -17,8 +17,11 @@ import {
 } from "@mui/material";
 import Grid from "@mui/material/Grid2";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import { defaultThumbnailUrl } from "../../../firebase"; // Import the default thumbnail URL
 
 const DocumentList = ({ initialDocs, user }) => {
+  const [ownerDocuments, setOwnerDocuments] = useState([]);
+  const [editorDocuments, setEditorDocuments] = useState([]);
   const [documents, setDocuments] = useState(initialDocs || []);
   const router = useRouter();
   const [anchorEl, setAnchorEl] = useState(null);
@@ -27,19 +30,41 @@ const DocumentList = ({ initialDocs, user }) => {
   useEffect(() => {
     if (!user) return;
 
-    const docsRef = collection(firestore, `userDocs/${user.email}/docs`);
-    const q = query(docsRef, orderBy("timestamp", "desc"));
+    const docsRef = collection(firestore, "documents");
 
-    const unsubscribe = onSnapshot(q, (querySnapshot) => {
-      const docs = querySnapshot.docs.map((doc) => ({
+    const ownerQuery = query(docsRef, where("ownerId", "==", user.uid));
+    const editorQuery = query(docsRef, where(`editors.${user.uid}`, "==", true));
+
+    const unsubscribeOwner = onSnapshot(ownerQuery, (ownerSnapshot) => {
+      const ownerDocs = ownerSnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
       }));
-      setDocuments(docs);
+      setOwnerDocuments(ownerDocs);
     });
 
-    return () => unsubscribe();
+    const unsubscribeEditor = onSnapshot(editorQuery, (editorSnapshot) => {
+      const editorDocs = editorSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setEditorDocuments(editorDocs);
+    });
+
+    return () => {
+      unsubscribeOwner();
+      unsubscribeEditor();
+    };
   }, [user]);
+
+  useEffect(() => {
+    const mergedDocs = [...ownerDocuments, ...editorDocuments];
+    const uniqueDocsMap = new Map();
+    mergedDocs.forEach((doc) => {
+      uniqueDocsMap.set(doc.id, doc);
+    });
+    setDocuments(Array.from(uniqueDocsMap.values()));
+  }, [ownerDocuments, editorDocuments]);
 
   const handleOpenDoc = (docId) => {
     router.push(`/editor/${docId}`);
@@ -60,10 +85,10 @@ const DocumentList = ({ initialDocs, user }) => {
     const newTitle = prompt("Enter new document title:", selectedDoc.title);
     if (newTitle && newTitle !== selectedDoc.title) {
       try {
-        const docRef = firestore.doc(`userDocs/${user.email}/docs/${selectedDoc.id}`);
-        await firestore.updateDoc(docRef, {
+        const docRef = doc(firestore, "documents", selectedDoc.id);
+        await updateDoc(docRef, {
           title: newTitle,
-          lastModified: firestore.serverTimestamp(),
+          lastModified: serverTimestamp(),
         });
       } catch (error) {
         console.error("Error renaming document:", error);
@@ -76,8 +101,8 @@ const DocumentList = ({ initialDocs, user }) => {
     const confirmDelete = confirm(`Are you sure you want to delete "${selectedDoc.title}"?`);
     if (confirmDelete) {
       try {
-        const docRef = firestore.doc(`userDocs/${user.email}/docs/${selectedDoc.id}`);
-        await firestore.deleteDoc(docRef);
+        const docRef = doc(firestore, "documents", selectedDoc.id);
+        await deleteDoc(docRef);
       } catch (error) {
         console.error("Error deleting document:", error);
       }
@@ -86,65 +111,47 @@ const DocumentList = ({ initialDocs, user }) => {
   };
 
   return (
-    <div>
-      <Typography variant="h6" gutterBottom>
-        Recent Documents
-      </Typography>
-      {documents.length === 0 ? (
-        <Typography>No recent documents.</Typography>
-      ) : (
-        <Grid container spacing={2}>
-          {documents.map((docData) => (
-            <Grid item xs={12} sm={6} md={3} key={docData.id}>
-              <Card
-                sx={{
-                  padding: 2,
-                  cursor: "pointer",
-                  position: "relative",
-                  "&:hover": {
-                    boxShadow: 6,
-                  },
-                }}
-                onClick={() => handleOpenDoc(docData.id)}
-              >
-                <div>
-                  <Badge
-                    color="secondary"
-                    variant="dot"
-                    invisible={!docData.isShared}
-                    overlap="circular"
-                    anchorOrigin={{
-                      vertical: "bottom",
-                      horizontal: "right",
-                    }}
-                  >
-                    <Avatar sx={{ bgcolor: "primary.main" }}>
-                      {docData.title.charAt(0).toUpperCase()}
-                    </Avatar>
-                  </Badge>
-                  <Tooltip title={docData.title}>
+    <section className="bg-white px-7 sm:px-10 py-5">
+      <div className="max-w-3xl mx-auto grid grid-cols-12 items-center gap-x-4 text-sm text-gray-700">
+        <h2 className="col-span-7 md:col-span-8 font-semibold">
+          Recent Documents
+        </h2>
+        <p className="col-span-3">Last Modified</p>
+        <div className="col-span-2 md:col-span-1">
+          {/* Optional: Add an icon or leave empty */}
+        </div>
+        <hr className="col-span-12 my-2 w-full bg-gray-400" />
+        {documents.length === 0 ? (
+          <p className="col-span-12">No recent documents.</p>
+        ) : (
+          documents.map((docData) => (
+            <div key={docData.id} className="col-span-12">
+              <Card className="flex items-center p-4 hover:bg-gray-100 cursor-pointer" onClick={() => handleOpenDoc(docData.id)}>
+                {/* Snapshot Image */}
+                <img
+                  src={docData.thumbnailUrl || defaultThumbnailUrl}
+                  alt={`${docData.title} Snapshot`}
+                  className="w-16 h-16 mr-4 object-cover rounded"
+                  onError={(e) => { e.target.onerror = null; e.target.src = defaultThumbnailUrl; }} // Fallback to default if image fails to load
+                />
+                <div className="flex-grow">
+                  <div className="flex justify-between items-center">
                     <Typography variant="subtitle1" noWrap>
                       {docData.title}
                     </Typography>
-                  </Tooltip>
+                    <IconButton onClick={(e) => handleMenuOpen(e, docData)}>
+                      <MoreVertIcon />
+                    </IconButton>
+                  </div>
                   <Typography variant="caption" color="textSecondary">
-                    Last modified:{" "}
-                    {docData.lastModified
-                      ? new Date(docData.lastModified.seconds * 1000).toLocaleString()
-                      : "N/A"}
+                    Last modified: {docData.lastModified ? new Date(docData.lastModified.seconds * 1000).toLocaleString() : "N/A"}
                   </Typography>
                 </div>
-                <IconButton
-                  onClick={(e) => handleMenuOpen(e, docData)}
-                  sx={{ position: "absolute", top: 8, right: 8 }}
-                >
-                  <MoreVertIcon />
-                </IconButton>
               </Card>
-            </Grid>
-          ))}
-        </Grid>
-      )}
+            </div>
+          ))
+        )}
+      </div>
 
       {/* Options Menu */}
       <Menu
@@ -155,7 +162,7 @@ const DocumentList = ({ initialDocs, user }) => {
         <MenuItem onClick={handleRename}>Rename</MenuItem>
         <MenuItem onClick={handleDelete}>Delete</MenuItem>
       </Menu>
-    </div>
+    </section>
   );
 };
 

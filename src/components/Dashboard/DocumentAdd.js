@@ -10,12 +10,21 @@ import DescriptionIcon from "@mui/icons-material/Description";
 import PeopleIcon from "@mui/icons-material/People";
 import Image from "next/image";
 import { v4 as uuidv4 } from 'uuid';
+import { storage } from "../../../firebase";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const DocumentAdd = ({ email }) => {
   const [inputValue, setInputValue] = useState("");
   const [isOpenModal, setIsOpenModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
   const router = useRouter();
   const { user } = useAuth();
+
+  const handleImageChange = (e) => {
+    if (e.target.files[0]) {
+      setSelectedImage(e.target.files[0]);
+    }
+  };
 
   const createDocument = async () => {
     if (inputValue.trim() === "") return;
@@ -40,7 +49,16 @@ const DocumentAdd = ({ email }) => {
         lastModified: serverTimestamp(),
         isShared: false,
         template: "Blank",
+        thumbnailUrl: "", // Placeholder for thumbnail URL
       });
+
+      if (selectedImage) {
+        const imageRef = ref(storage, `thumbnails/${docId}`);
+        await uploadBytes(imageRef, selectedImage);
+        const downloadURL = await getDownloadURL(imageRef);
+        await updateDoc(docRef, { thumbnailUrl: downloadURL });
+        console.log("Thumbnail uploaded successfully:", downloadURL); // Debug log
+      }
 
       closeModal();
       router.push(`/editor/${docId}`);
@@ -82,7 +100,7 @@ const DocumentAdd = ({ email }) => {
               onClick={() => setIsOpenModal(true)}
             >
               <Image
-                src="/blank-doc.png"
+                src={selectedImage ? URL.createObjectURL(selectedImage) : "/blank-doc.png"}
                 fill
                 className="rounded active:opacity-50"
                 alt="Blank Document"

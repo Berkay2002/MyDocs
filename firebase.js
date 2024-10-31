@@ -38,6 +38,9 @@ const getUsernameById = async (userId) => {
   }
 };
 
+// Add the default thumbnail URL
+const defaultThumbnailUrl = "https://firebasestorage.googleapis.com/v0/b/YOUR_PROJECT_ID.appspot.com/o/thumbnails%2Fdefault-thumbnail.png?alt=media&token=YOUR_TOKEN";
+
 const signInWithGoogle = async () => {
   const result = await signInWithPopup(auth, googleProvider);
   return result.user;
@@ -46,7 +49,9 @@ const signInWithGoogle = async () => {
 const uploadProfilePicture = async (userId, file) => {
   const storageRef = ref(storage, `profilePictures/${userId}`);
   await uploadBytes(storageRef, file);
-  return getDownloadURL(storageRef);
+  const downloadURL = await getDownloadURL(storageRef);
+  console.log("Profile picture uploaded. Download URL:", downloadURL);
+  return downloadURL;
 };
 
 // Helper function to find a user by email or displayTag (username#ID)
@@ -103,5 +108,5 @@ const rejectFriendRequest = async (requestId) => {
 export { 
   auth, firestore, storage, signInWithGoogle, findUserByIdentifier, sendFriendRequest, acceptFriendRequest, rejectFriendRequest, uploadProfilePicture,
   getDoc, setDoc, doc, collection, query, where, getDocs, updateDoc, arrayUnion, deleteDoc, ref, uploadBytes, getDownloadURL, getUsernameById, 
-  serverTimestamp, orderBy, onSnapshot, addDoc
+  serverTimestamp, orderBy, onSnapshot, addDoc, defaultThumbnailUrl
 };

@@ -28,7 +28,7 @@ import {
 import { useState, useEffect } from "react";
 import { useAuth } from "../../../AuthContext";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-
+import moment from "moment";
 
 const CommentSection = ({ documentId, onClose }) => {
   const { user } = useAuth();
@@ -45,7 +45,7 @@ const CommentSection = ({ documentId, onClose }) => {
     if (!documentId) return;
 
     const commentsRef = collection(firestore, `documents/${documentId}/comments`);
-    const commentsQuery = query(commentsRef, orderBy("timestamp", "desc"));
+    const commentsQuery = query(commentsRef, orderBy("timestamp", "asc")); // Changed 'desc' to 'asc'
     const unsubscribe = onSnapshot(commentsQuery, (snapshot) => {
       const fetchedComments = snapshot.docs.map((doc) => ({
         id: doc.id,
@@ -106,24 +106,12 @@ const CommentSection = ({ documentId, onClose }) => {
   if (!user) {
     return <p>You must be logged in to comment.</p>;
   }
-  
 
   return (
     <div className="p-4 rounded-lg" style={{ backgroundColor: '#f0f4f9' }}>
       <h5>Comments</h5>
-      <form onSubmit={handleAddComment} className="flex flex-col mb-4">
-        <TextField
-          variant="outlined"
-          value={newComment}
-          onChange={(e) => setNewComment(e.target.value)}
-          placeholder="Add a comment..."
-          className="mb-2"
-        />
-        <Button type="submit" variant="contained" color="primary">
-          Post
-        </Button>
-      </form>
-      <List className="space-y-2">
+      
+      <List className="space-y-2" style={{ maxHeight: '70vh', overflowY: 'auto' }}> {/* Added maxHeight and overflow */}
         {comments.map((comment) => (
           <ListItem key={comment.id} className="border-b border-gray-200 pb-2">
             {editCommentId === comment.id ? (
@@ -137,20 +125,37 @@ const CommentSection = ({ documentId, onClose }) => {
                 <Button onClick={() => handleEditComment(comment.id)}>Save</Button>
               </div>
             ) : (
-              <>
-                <ListItemText
-                  primary={`${comment.username}: ${comment.content}`}
-                />
-                <IconButton
-                  onClick={(e) => handleMenuClick(e, comment)}
-                >
-                  <MoreVertIcon />
-                </IconButton>
-              </>
+              <ListItemText
+                primary={
+                  <div>
+                    <span className="font-semibold">{comment.username}</span>{' '}
+                    <span className="text-xs text-gray-500">
+                      {moment(comment.timestamp.toDate()).format('LLL')}
+                    </span>
+                    <p className="mt-1">{comment.content}</p>
+                  </div>
+                }
+              />
             )}
+            <IconButton onClick={(e) => handleMenuClick(e, comment)}>
+              <MoreVertIcon />
+            </IconButton>
           </ListItem>
         ))}
       </List>
+
+      <form onSubmit={handleAddComment} className="flex flex-col mt-4"> {/* Changed from 'mb-4' to 'mt-4' and moved below the List */}
+        <TextField
+          variant="outlined"
+          value={newComment}
+          onChange={(e) => setNewComment(e.target.value)}
+          placeholder="Add a comment..."
+          className="mb-2"
+        />
+        <Button type="submit" variant="contained" color="primary">
+          Post
+        </Button>
+      </form>
 
       {/* Single Menu Component */}
       <Menu

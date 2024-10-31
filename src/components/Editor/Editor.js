@@ -181,7 +181,7 @@ const Editor = ({ documentId }) => {
       <header className="flex justify-between items-center p-3 pb-1 editor-header">
         <Link href="/" legacyBehavior>
           <a className="flex items-center mr-3">
-            <DescriptionIcon fontSize="large" color="primary" />
+            <Image src="/MainLogo.svg" alt="Main Logo" width={50} height={50} />
           </a>
         </Link>
         <div className="flex-grow px-2">
@@ -210,24 +210,24 @@ const Editor = ({ documentId }) => {
             )}
           </div>
         </div>
-        <div className="flex items-center">
+        <div className="flex items-center space-x-4"> {/* Added space-x-4 and removed individual margins */}
+          <IconButton
+            color="primary"
+            className="hidden md:inline-flex h-10" // Removed mr-4
+            onClick={handleCommentsToggle} // Update to toggle comments
+          >
+            <CommentIcon fontSize="large" /> {/* Increase the size of the Comment Icon */}
+          </IconButton>
           <Button
             color="primary"
             variant="contained"
-            className="hidden md:inline-flex h-10 mr-4"
+            className="hidden md:inline-flex h-10"
             size="medium"
             onClick={handleShareOpen} // Add onClick handler
           >
             Share
           </Button>
-          <IconButton
-            color="primary"
-            className="hidden md:inline-flex h-10 mr-2"
-            onClick={handleCommentsToggle} // Update to toggle comments
-          >
-            <CommentIcon />
-          </IconButton>
-          <ProfileIcon className="ml-4" /> {/* Adjust margin if needed */}
+          <ProfileIcon /> {/* Removed ml-6 */}
         </div>
       </header>
 
@@ -247,10 +247,9 @@ const Editor = ({ documentId }) => {
 
         {/* Floating Panel */}
         {isCommentsOpen && ( // Render only when toggled
-          <div className={`floating-panel`}>
+          <div className="floating-panel" style={{ width: '20%', height: 'calc(100vh - 64px)', position: 'fixed', top: '64px', right: '0', backgroundColor: 'white', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', zIndex: 1000 }}>
             <Box sx={{ p: 2, height: '100%', overflow: 'auto' }}>
               <Typography variant="h6" gutterBottom style={{ position: 'relative' }}>
-                Comments
                 <IconButton
                   onClick={handleCommentsToggle} // Toggle on close
                   style={{ position: 'absolute', top: 0, right: 0 }}
@@ -265,21 +264,7 @@ const Editor = ({ documentId }) => {
       </div>
 
       {/* Presence Indicator */}
-      <PresenceIndicator documentId={documentId} />
-
-      {/* Access Control and Comments */}
-      <Grid container spacing={2}>
-        {documentData.ownerId === user.uid && (
-          <Grid item xs={12}>
-            <AccessControl
-              documentId={documentId}
-              ownerId={documentData.ownerId}
-              userId={user.uid}
-            />
-          </Grid>
-        )}
-        {/* Remove the existing CommentSection if now integrated into the floating panel */}
-      </Grid>
+      {/*<PresenceIndicator documentId={documentId} />*/}
 
       {/* Share Modal */}
       <Modal
