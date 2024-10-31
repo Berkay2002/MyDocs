@@ -32,6 +32,18 @@ html::-webkit-scrollbar-thumb:active {
 	background-color: rgba(0, 0, 0, 0.35);
 }
 
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden; /* Prevent scrolling globally */
+}
+
+/* Ensure that when not in Login mode, scrolling is enabled */
+body.logged-in {
+  overflow: auto;
+}
+
 @layer components {
 	.option {
 				cursor: pointer;

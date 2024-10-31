@@ -112,7 +112,7 @@ const DocumentList = ({ initialDocs, user }) => {
 
   return (
     <section className="bg-white px-7 sm:px-10 py-5">
-      <div className="max-w-3xl mx-auto grid grid-cols-12 items-center gap-x-4 text-sm text-gray-700">
+      <div className="max-w-3xl mx-auto grid grid-cols-12 items-center gap-x-4 gap-y-4 text-sm text-gray-700">
         <h2 className="col-span-7 md:col-span-8 font-semibold">
           Recent Documents
         </h2>
