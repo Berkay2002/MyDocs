@@ -8,6 +8,8 @@ import DocumentAdd from "../components/Dashboard/DocumentAdd";
 import DocumentList from "../components/Dashboard/DocumentList";
 import { collection, query, where, orderBy, getDocs, firestore } from "../../firebase";
 import withAuth from "../utils/withAuth";
+import RecentDocuments from "../components/Dashboard/RecentDocuments";
+import SharedDocuments from "../components/Dashboard/SharedDocuments";
 
 function Home() {
   const { user } = useAuth();
@@ -38,6 +40,7 @@ function Home() {
     <>
       <DocumentAdd email={user?.email} />
       <DocumentList initialDocs={initialDocs} user={user} />
+      <SharedDocuments user={user} />
     </>
   );
 }
