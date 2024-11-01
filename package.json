@@ -26,7 +26,9 @@
     "react-draft-wysiwyg": "^1.15.0",
     "react-firebase-hooks": "^5.1.1",
     "react-measure": "^2.5.2",
-    "uuid": "^11.0.2"
+    "uuid": "^11.0.2",
+    "y-websocket": "^2.0.4",
+    "yjs": "^13.6.20"
   },
   "devDependencies": {
     "autoprefixer": "^10.4.20",

@@ -6,12 +6,12 @@ import { useState, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { convertFromRaw, convertToRaw, EditorState } from "draft-js";
+import debounce from "lodash/debounce";
 import {
   doc,
   updateDoc,
   onSnapshot,
   getDoc,
-  setDoc,
   serverTimestamp,
 } from "../../../firebase";
 import { firestore } from "../../../firebase";
@@ -19,35 +19,30 @@ import { useAuth } from "../../../AuthContext";
 import moment from "moment";
 import Image from "next/image";
 import Link from "next/link";
+import PresenceIndicator from "./PresenceIndicator";
+import AccessControl from "./AccessControl";
+import CommentSection from "./CommentSection";
+import Grid from "@mui/material/Grid2";
 import useDocumentPresence from "../../hooks/useDocumentPresence";
-import { saveCursorPosition, restoreCursorPosition } from "./cursorUtils";
 
 // For the Profile Picture
+import SignOut from "../../components/Signout";
 import ProfileIcon from "../Navbar/ProfileIcon";
 
 // For the file logic
-import FileMenu from "./FileMenu";
-import AccessControl from "./AccessControl";
-import CommentSection from "./CommentSection";
-
-import {
-  Button,
-  IconButton,
-  TextField,
-  Modal,
-  Box,
-  Typography,
-} from "@mui/material";
-import CommentIcon from "@mui/icons-material/Comment";
-import CloseIcon from "@mui/icons-material/Close";
+import FileMenu from './FileMenu';
 
 import "react-draft-wysiwyg/dist/react-draft-wysiwyg.css";
+import { Button, IconButton, Icon } from "@mui/material";
+import DescriptionIcon from "@mui/icons-material/Description";
+import PeopleIcon from "@mui/icons-material/People";
+import Modal from "@mui/material/Modal"; // Add this import
+import Box from "@mui/material/Box";
+import Typography from "@mui/material/Typography";
+import CommentIcon from "@mui/icons-material/Comment"; // Import Comment Icon
+import CloseIcon from '@mui/icons-material/Close'; // Add this import
+import TextField from "@mui/material/TextField";
 
-// Yjs imports
-import * as Y from "yjs";
-import { WebsocketProvider } from "y-websocket";
-
-// Dynamic import for EditorComponent
 const EditorComponent = dynamic(
   () => import("react-draft-wysiwyg").then((mod) => mod.Editor),
   { ssr: false }
@@ -59,10 +54,11 @@ const Editor = ({ documentId }) => {
   const [documentData, setDocumentData] = useState(null);
   const [editorState, setEditorState] = useState(EditorState.createEmpty());
   const [editPermission, setEditPermission] = useState(false);
+  const [isSaved, setIsSaved] = useState("Saved");
   const [lastUpdated, setLastUpdated] = useState(null);
   const [profileImage, setProfileImage] = useState("/default-profile.jpg");
-  const [isShareOpen, setIsShareOpen] = useState(false);
-  const [isCommentsOpen, setIsCommentsOpen] = useState(false);
+  const [isShareOpen, setIsShareOpen] = useState(false); // Add state for modal
+  const [isCommentsOpen, setIsCommentsOpen] = useState(false); // Add state for comments
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [newTitle, setNewTitle] = useState("");
 
@@ -80,20 +76,6 @@ const Editor = ({ documentId }) => {
     }
   }, [user]);
 
-  // Yjs setup
-  const ydoc = useMemo(() => new Y.Doc(), []);
-  const provider = useMemo(
-    () =>
-      new WebsocketProvider(
-        'wss://yjs-websocket-server-0j6z.onrender.com', // Your deployed WebSocket server URL
-        documentId,
-        ydoc
-      ),
-    [documentId, ydoc]
-  );
-  const yText = useMemo(() => ydoc.getText("content"), [ydoc]);
-
-  // Load initial document data and content
   useEffect(() => {
     if (!documentId || !user) return;
 
@@ -106,12 +88,9 @@ const Editor = ({ documentId }) => {
           setDocumentData(data);
           setNewTitle(data.title);
 
-          // Load initial content into yText
           if (data.content) {
-            ydoc.transact(() => {
-              yText.delete(0, yText.length);
-              yText.insert(0, JSON.stringify(data.content));
-            });
+            const contentState = convertFromRaw(data.content);
+            setEditorState(EditorState.createWithContent(contentState));
           }
 
           setLastUpdated(data.lastModified?.toDate());
@@ -130,87 +109,60 @@ const Editor = ({ documentId }) => {
 
     fetchDocumentData();
 
-    // Listen for changes in document data (excluding content)
     const unsubscribe = onSnapshot(
       doc(firestore, "documents", documentId),
       (docSnapshot) => {
         if (docSnapshot.exists()) {
           const data = docSnapshot.data();
+          setDocumentData(data);
+          setNewTitle(data.title);
+
+          if (data.content) {
+            const contentState = convertFromRaw(data.content);
+            setEditorState(EditorState.createWithContent(contentState));
+          }
+
           setLastUpdated(data.lastModified?.toDate());
+
+          const isOwner = data.ownerId === user.uid;
+          const isEditor = data.editors && data.editors[user.uid] === true;
+          setEditPermission(isOwner || isEditor);
+        } else {
+          console.log("Document does not exist.");
         }
-      },
-      (error) => {
-        console.error("Firestore error:", error.message);
       }
     );
 
-    return () => {
-      unsubscribe();
-      provider.destroy(); // Clean up the WebSocket provider
-      ydoc.destroy(); // Destroy the Yjs document
-    };
-  }, [documentId, user, yText, ydoc, provider]);
+    return () => unsubscribe();
+  }, [documentId, user]);
 
-  // Observe changes in yText and update editorState
-  useEffect(() => {
-    const updateEditorState = () => {
-      const contentString = yText.toString();
-      if (contentString) {
-        try {
-          const content = JSON.parse(contentString);
-          const contentState = convertFromRaw(content);
-          setEditorState(EditorState.createWithContent(contentState));
-        } catch (e) {
-          console.error("Failed to parse content from yText:", e);
-        }
-      } else {
-        setEditorState(EditorState.createEmpty());
-      }
-    };
-
-    yText.observe(updateEditorState);
-
-    // Initialize editorState
-    updateEditorState();
-
-    return () => yText.unobserve(updateEditorState);
-  }, [yText]);
-
-  // Update yText when editorState changes
-  const handleEditorStateChange = (newState) => {
-    if (!editPermission) return;
-    setEditorState(newState);
-    const content = convertToRaw(newState.getCurrentContent());
-
-    ydoc.transact(() => {
-      yText.delete(0, yText.length);
-      yText.insert(0, JSON.stringify(content));
-    });
+  const handleEditorStateChange = (state) => {
+    setIsSaved("Saving...");
+    setEditorState(state);
+    saveContent(state);
   };
 
-  // Periodically backup Yjs content to Firestore
-  useEffect(() => {
-    const backupToFirestore = async () => {
-      const docRef = doc(firestore, "documents", documentId);
-      try {
-        await setDoc(
-          docRef,
-          {
-            content: JSON.parse(yText.toString()),
+  const saveContent = useMemo(
+    () =>
+      debounce(async (state) => {
+        if (!editPermission) return;
+        try {
+          const contentState = convertToRaw(state.getCurrentContent());
+          const docRef = doc(firestore, "documents", documentId);
+          await updateDoc(docRef, {
+            content: contentState,
             lastModified: serverTimestamp(),
-          },
-          { merge: true }
-        );
-      } catch (error) {
-        console.error("Error backing up to Firestore:", error);
-      }
-    };
+          });
+          setIsSaved("Saved");
+          setLastUpdated(new Date());
+        } catch (error) {
+          console.error("Error updating document:", error.message);
+          setIsSaved("Error Saving");
+        }
+      }, 2000),
+    [documentId, editPermission]
+  );
 
-    const interval = setInterval(backupToFirestore, 30000); // Every 30 seconds
-    return () => clearInterval(interval);
-  }, [documentId, yText]);
-
-  // Handle sharing modal
   const handleShareOpen = () => {
     setIsShareOpen(true);
   };
@@ -219,7 +171,6 @@ const Editor = ({ documentId }) => {
     setIsShareOpen(false);
   };
 
-  // Handle document title editing
   const handleTitleEdit = () => {
     setIsEditingTitle(true);
   };
@@ -277,22 +228,16 @@ const Editor = ({ documentId }) => {
               </h2>
             )}
             <div className="text-gray-500 flex items-center">
-              <Image
-                src="/saved.svg"
-                alt="Save Icon"
-                width={20}
-                height={20}
-                className="h-5 w-5"
-              />
-              <p className="ml-2">All changes saved</p>
+              {isSaved !== "Saving..." ? (
+                <Image src="/saved.svg" alt="Save Icon" width={20} height={20} className="h-5 w-5" />
+              ) : (
+                <Icon name="cached" size="regular" />
+              )}
+              <p className="ml-2">{isSaved}</p>
             </div>
           </div>
           <div className="hidden md:flex items-center space-x-1 text-gray-600 text-sm -ml-1 h-8">
-            <FileMenu
-              documentId={documentId}
-              onShareOpen={handleShareOpen}
-              documentData={documentData}
-            />
+            <FileMenu documentId={documentId} onShareOpen={handleShareOpen} documentData={documentData} /> {/* Pass props */}
             <p className="option">Edit</p>
             <p className="option">Insert</p>
             <p className="option">View</p>
@@ -305,24 +250,24 @@ const Editor = ({ documentId }) => {
             )}
           </div>
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4"> {/* Added space-x-4 and removed individual margins */}
           <IconButton
             color="primary"
-            className="hidden md:inline-flex h-10"
-            onClick={handleCommentsToggle}
+            className="hidden md:inline-flex h-10" // Removed mr-4
+            onClick={handleCommentsToggle} // Update to toggle comments
           >
-            <CommentIcon fontSize="large" />
+            <CommentIcon fontSize="large" /> {/* Increase the size of the Comment Icon */}
           </IconButton>
           <Button
             color="primary"
             variant="contained"
             className="hidden md:inline-flex h-10"
             size="medium"
-            onClick={handleShareOpen}
+            onClick={handleShareOpen} // Add onClick handler
           >
             Share
           </Button>
-          <ProfileIcon />
+          <ProfileIcon /> {/* Removed ml-6 */}
         </div>
       </header>
 
@@ -341,41 +286,25 @@ const Editor = ({ documentId }) => {
         </div>
 
         {/* Floating Panel */}
-        {isCommentsOpen && (
-          <div
-            className="floating-panel"
-            style={{
-              width: "20%",
-              height: "calc(100vh - 64px)",
-              position: "fixed",
-              top: "64px",
-              right: "0",
-              backgroundColor: "white",
-              boxShadow: "0 4px 8px rgba(0, 0, 0, 0.1)",
-              zIndex: 1000,
-            }}
-          >
-            <Box sx={{ p: 2, height: "100%", overflow: "auto" }}>
-              <Typography
-                variant="h6"
-                gutterBottom
-                style={{ position: "relative" }}
-              >
+        {isCommentsOpen && ( // Render only when toggled
+          <div className="floating-panel" style={{ width: '20%', height: 'calc(100vh - 64px)', position: 'fixed', top: '64px', right: '0', backgroundColor: 'white', boxShadow: '0 4px 8px rgba(0, 0, 0, 0.1)', zIndex: 1000 }}>
+            <Box sx={{ p: 2, height: '100%', overflow: 'auto' }}>
+              <Typography variant="h6" gutterBottom style={{ position: 'relative' }}>
                 <IconButton
-                  onClick={handleCommentsToggle}
-                  style={{ position: "absolute", top: 0, right: 0 }}
+                  onClick={handleCommentsToggle} // Toggle on close
+                  style={{ position: 'absolute', top: 0, right: 0 }}
                 >
                   <CloseIcon />
                 </IconButton>
               </Typography>
-              <CommentSection
-                documentId={documentId}
-                onClose={handleCommentsToggle}
-              />
+              <CommentSection documentId={documentId} onClose={handleCommentsToggle} /> {/* Use toggle handler */}
             </Box>
           </div>
         )}
       </div>
+
+      {/* Presence Indicator */}
+      {/*<PresenceIndicator documentId={documentId} />*/}
 
       {/* Share Modal */}
       <Modal
@@ -386,13 +315,13 @@ const Editor = ({ documentId }) => {
       >
         <Box
           sx={{
-            position: "absolute",
-            top: "50%",
-            left: "50%",
-            transform: "translate(-50%, -50%)",
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
             width: 400,
-            bgcolor: "background.paper",
-            borderRadius: "8px",
+            bgcolor: 'background.paper',
+            borderRadius: '8px',
             boxShadow: 24,
             p: 4,
           }}
@@ -400,7 +329,7 @@ const Editor = ({ documentId }) => {
           <Typography id="share-modal-title" variant="h6" component="h2">
             Share Document
           </Typography>
-          <AccessControl documentId={documentId} />
+          <AccessControl documentId={documentId} /> {/* Integrate AccessControl */}
           <Button onClick={handleShareClose} sx={{ mt: 2 }}>
             Close
           </Button>
