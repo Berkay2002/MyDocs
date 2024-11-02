@@ -6,17 +6,13 @@ import { useEffect, useState } from "react";
 import { collection, onSnapshot } from "../../../firebase";
 import { firestore } from "../../../firebase";
 
-
 const PresenceIndicator = ({ documentId }) => {
   const [activeUsers, setActiveUsers] = useState([]);
 
   useEffect(() => {
     if (!documentId) return;
 
-    const presenceRef = collection(
-      firestore,
-      `documents/${documentId}/presence`
-    );
+    const presenceRef = collection(firestore, `documents/${documentId}/presence`);
 
     const unsubscribe = onSnapshot(presenceRef, (snapshot) => {
       const users = snapshot.docs.map((docSnapshot) => {

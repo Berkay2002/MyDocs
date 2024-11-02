@@ -57,8 +57,6 @@ const Navbar = () => {
 
       <ProfileIcon />
     </header>
-
-
   );
 };
 

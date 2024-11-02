@@ -46,14 +46,14 @@ body.logged-in {
 
 @layer components {
 	.option {
-				cursor: pointer;
-				transition: background-color 200ms ease-out;
-				padding: 0.25rem 0.625rem;
-				border-radius: 0.5rem;
-		}
-		
-		.option:hover {
-				background-color: #2563eb; /* Updated to match bg-blue-600 */
+		cursor: pointer;
+		transition: background-color 200ms ease-out;
+		padding: 0.25rem 0.625rem;
+		border-radius: 0.5rem;
+	}
+	
+	.option:hover {
+		background-color: #2563eb; /* Updated to match bg-blue-600 */
 	}
 
   .signup-container {
@@ -64,6 +64,24 @@ body.logged-in {
     @apply bg-gray-50; /* Updated to a very white gray */
   }
 }
+
+/* Quill editor styling */
+.ql-editor {
+	min-height: 500px; /* Adjust as needed */
+	padding: 20px; /* Optional: Adds padding inside the editor */
+}
+
+/* Customize the toolbar appearance */
+.ql-toolbar {
+	border: none;
+	border-bottom: 1px solid #ccc;
+}
+
+.ql-container {
+	border: none;
+}
+
+/* Removed .icon-small as icon sizes are now handled via MUI props */
 
 /* print stuff */
 @page {
@@ -99,6 +117,11 @@ body.logged-in {
 	header {
 		display: none !important;
 	}
+}
+
+/* Ensure the editor container has sufficient height */
+.editor-main .flex-grow {
+	height: 600px; /* Adjust as needed */
 }
 
 /* Ensure that the purge paths are correctly set in tailwind.config.js */
